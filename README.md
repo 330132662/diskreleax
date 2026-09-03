@@ -5,6 +5,41 @@
 > 同时在原位置留下软链接（junction），让系统和软件仍按原路径正常访问，从而**释放 C 盘空间**。
 
 ---
+## 打包为exe 
+可直接使用dist 目录中的exe 文件 。先确认一下当前环境里哪些 Python 带 tkinter（打包时 PyInstaller 会捆绑正在运行的那个 Python 的库，缺 tkinter 打出来的 exe 会跑不起来）。
+已确认：你当前的 **managed python 3.13.12 不包含 tkinter**（精简版），而 **系统 python 3.13.15 带 tkinter 8.6**。因此打包必须用系统那个 Python，否则打出来的 exe 会报 `ModuleNotFoundError: tkinter`。
+
+## 编译 Windows 版 exe 步骤
+
+**1. 用带 tkinter 的 Python 打开终端**
+在项目目录 `D:\bbiot\codes\diskreleax` 下，用系统 Python（建议用它的 `python` 命令，或绝对路径 `D:\software\python\python.exe`）。
+
+**2. 安装 PyInstaller**
+```bat
+D:\software\python\python.exe -m pip install pyinstaller
+```
+
+**3. 打包（GUI 程序，无控制台窗口）**
+```bat
+D:\software\python\python.exe -m PyInstaller --onefile --windowed --name "C盘目录迁移工具" c_drive_migrator.py
+```
+- `--onefile`：生成单个 `dist\C盘目录迁移工具.exe`，便于分发。
+- `--windowed`（= `-w`）：不弹黑色控制台，适合 GUI。若打包后启动报错想看日志，先去掉 `-w` 重打一次排错。
+- 想要更快启动、体积分布清晰的版本，可把 `--onefile` 换成 `--onedir`（生成 `dist\C盘目录迁移工具\` 文件夹）。
+
+**4. 产物位置**
+```
+D:\bbiot\codes\diskreleax\dist\C盘目录迁移工具.exe
+```
+
+## 注意事项
+- **只能在 Windows 上打包出 Windows exe**，无法从 Linux/Mac 直接交叉编译。
+- 本程序用到 `mklink`/`robocopy`，迁移系统目录时若失败，请**右键 exe → 以管理员身份运行**。
+- 一般 tkinter 会被自动识别；万一报缺模块，加 `--hidden-import tkinter`。
+- 可选加图标：`--icon app.ico`。
+- 打包环境请用“系统 Python 3.13.15”，不要用 WorkBuddy 的 managed python（缺 tkinter）。
+
+需要的话，我可以直接帮你建一个 `build.bat` 一键打包脚本，或现在就用系统 Python 实际跑一次 PyInstaller 把 exe 打出来（会自动安装 pyinstaller，耗时几分钟）。要哪种？
 
 ## 一、功能说明
 
