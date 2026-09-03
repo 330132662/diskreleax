@@ -5,7 +5,7 @@ C 盘目录迁移工具（软链接 / Junction 版）
 功能：
   1. 扫描 C:\Users 下每个一级目录的磁盘占用，以列表展示。
   2. 双击任意目录进入下级目录，继续计算并显示子文件夹空间占用。
-  3. 右键目录项 -> "一键迁移到 C 盘（软链接）"：将源目录内容移到用户自选的
+  3. 右键目录项 -> "选择实际存放目录"：将源目录内容移到用户自选的
      目标文件夹，并在原位置建立 junction 软链接，使原路径仍然可用。
   4. 迁移前确认路径，迁移后显示处理结果。
 
@@ -178,7 +178,7 @@ class MigratorApp:
         # 右键菜单
         self.menu = tk.Menu(self.root, tearoff=0)
         self.menu.add_command(
-            label="一键迁移到 C 盘（软链接）", command=self.migrate_selected
+            label="选择实际存放目录", command=self.migrate_selected
         )
         self.menu.add_separator()
         self.menu.add_command(label="打开所在文件夹", command=self.open_in_explorer)
