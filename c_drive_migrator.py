@@ -18,6 +18,7 @@ import os
 import sys
 import time
 import ctypes
+import webbrowser
 import threading
 import subprocess
 import tkinter as tk
@@ -182,11 +183,32 @@ class MigratorApp:
         self.menu.add_separator()
         self.menu.add_command(label="打开所在文件夹", command=self.open_in_explorer)
 
-        # 状态栏
+        # 状态栏（左：状态信息；右：版权标识 + 关于按钮）
         self.status_var = tk.StringVar(value="就绪")
-        ttk.Label(
-            self.root, textvariable=self.status_var, relief="sunken", anchor="w"
-        ).pack(fill="x", side="bottom")
+        frm_status = tk.Frame(self.root, relief="sunken", bd=1)
+        frm_status.pack(fill="x", side="bottom")
+
+        tk.Label(frm_status, textvariable=self.status_var, anchor="w").pack(
+            side="left", fill="x", expand=True, padx=(4, 0)
+        )
+        tk.Label(frm_status, text="版权所属 @北北物联", fg="#555").pack(
+            side="right", padx=(0, 6)
+        )
+        self.about_btn = ttk.Button(
+            frm_status, text="关于", width=6, command=self.show_about_menu
+        )
+        self.about_btn.pack(side="right", padx=(0, 6))
+
+        # 关于菜单（点击“关于”按钮弹出，上下排列）
+        self.about_menu = tk.Menu(self.root, tearoff=0)
+        self.about_menu.add_command(
+            label="码云本版本库地址  https://gitee.com/jeffcat/diskreleax",
+            command=lambda: self.open_url("https://gitee.com/jeffcat/diskreleax"),
+        )
+        self.about_menu.add_command(
+            label="北北物联官网  https://www.appppa.cn/",
+            command=lambda: self.open_url("https://www.appppa.cn/"),
+        )
 
         # 提示
         ttk.Label(
@@ -194,6 +216,19 @@ class MigratorApp:
             text="提示：双击进入子目录；右键目录项可一键迁移（junction 软链接，原路径继续可用）。",
             foreground="#555",
         ).pack(fill="x", padx=8, pady=(0, 4))
+
+    # --------------------------- 关于 --------------------------- #
+    def show_about_menu(self):
+        """点击“关于”按钮，在按钮下方弹出上下排列的菜单。"""
+        btn = self.about_btn
+        x = btn.winfo_rootx()
+        y = btn.winfo_rooty() + btn.winfo_height()
+        self.about_menu.tk_popup(x, y)
+        self.about_menu.grab_release()
+
+    def open_url(self, url):
+        """在默认浏览器中打开网址。"""
+        webbrowser.open(url)
 
     # --------------------------- 扫描 / 展示 --------------------------- #
     def refresh(self, force=False):
