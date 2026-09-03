@@ -134,6 +134,7 @@ class MigratorApp:
         self.current_path = ROOT_PATH
         self.history = []          # 上级目录栈
         self.scan_thread = None
+        self.scanning = False      # 是否有目录大小扫描正在进行（用于「上级」安全提示）
         self.progress_win = None
         self.scan_gen = 0          # 扫描代次：导航时自增，旧扫描结果作废
         self.sizes = {}            # 路径 -> 字节数，用于按大小排序
@@ -147,7 +148,8 @@ class MigratorApp:
         frm_top = ttk.Frame(self.root, padding=(8, 8, 8, 4))
         frm_top.pack(fill="x")
 
-        ttk.Button(frm_top, text="← 上级", command=self.go_up, width=8).pack(side="left")
+        self.up_btn = ttk.Button(frm_top, text="← 上级", command=self.go_up, width=8)
+        self.up_btn.pack(side="left")
         ttk.Button(frm_top, text="刷新", command=lambda: self.refresh(force=True), width=8).pack(side="left", padx=(6, 0))
         ttk.Label(frm_top, text="当前位置：").pack(side="left", padx=(10, 2))
         self.path_var = tk.StringVar(value=self.current_path)
@@ -236,8 +238,11 @@ class MigratorApp:
         self.scan_gen += 1
         gen = self.scan_gen
         self.sizes = {}
+        self.scanning = False     # 刷新开始时标记为无扫描；下方真正启动扫描时再置 True
 
         self.path_var.set(self.current_path)
+        # 无上级目录时禁用「上级」按钮，避免无效点击
+        self.up_btn["state"] = "normal" if self.history else "disabled"
         self.tree.delete(*self.tree.get_children())
         try:
             entries = [
@@ -281,6 +286,7 @@ class MigratorApp:
         if need_scan:
             self.status_var.set(f"扫描中… 共 {len(entries)} 个文件夹 · {self.current_path}")
             real_entries = [e for e in entries if not is_junction(e.path)]
+            self.scanning = True
             self.scan_thread = threading.Thread(
                 target=self._scan_worker, args=(real_entries, gen, force), daemon=True
             )
@@ -315,6 +321,7 @@ class MigratorApp:
     def _scan_done(self, gen, total_all, count):
         if gen != self.scan_gen:              # 已是过期扫描，忽略
             return
+        self.scanning = False
         self._reorder_by_size()
         self.status_var.set(
             f"共 {count} 个文件夹 · 合计 {human_size(total_all)} · {self.current_path}"
@@ -342,9 +349,22 @@ class MigratorApp:
         self.refresh()
 
     def go_up(self):
-        if self.history:
-            self.current_path = self.history.pop()
-            self.refresh()
+        if not self.history:
+            return
+        # 若后台仍在扫描当前目录，直接返回上级会中断该扫描，先征求用户意见
+        if self.scanning:
+            ans = messagebox.askyesno(
+                "返回上级目录",
+                "当前目录的大小扫描仍在进行中。\n"
+                "此时返回上级目录会中断该扫描并切换到上级视图。\n\n"
+                "是否强制返回上级目录？\n"
+                "（「是」：立即中断扫描并返回；「否」：留在当前目录，等待扫描完成）",
+                icon="warning",
+            )
+            if not ans:
+                return
+        self.current_path = self.history.pop()
+        self.refresh()
 
     def open_in_explorer(self):
         sel = self.tree.selection()
