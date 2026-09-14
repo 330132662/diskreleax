@@ -3,7 +3,7 @@ r"""
 C 盘目录迁移工具（软链接 / Junction 版）
 
 功能：
-  1. 扫描 C:\Users 下每个一级目录的磁盘占用，以列表展示。
+  1. 扫描 C 盘根目录（C:\）下每个一级目录的磁盘占用，以列表展示。
   2. 双击任意目录进入下级目录，继续计算并显示子文件夹空间占用。
   3. 右键目录项 -> "选择实际存放目录"：将源目录内容移到用户自选的
      目标文件夹，并在原位置建立 junction 软链接，使原路径仍然可用。
@@ -24,8 +24,25 @@ import subprocess
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 
+# 窗口程序（console=False）出错时静默退出的兜底：把异常显示出来，避免“一闪而过”
+import traceback as _traceback
+
+
+def _excepthook(exc_type, exc_value, exc_tb):
+    text = "".join(_traceback.format_exception(exc_type, exc_value, exc_tb))
+    try:
+        root = tk.Tk()
+        root.withdraw()
+        messagebox.showerror("程序出错", text)
+        root.destroy()
+    except Exception:
+        pass
+
+
+sys.excepthook = _excepthook
+
 FILE_ATTRIBUTE_REPARSE_POINT = 0x400
-ROOT_PATH = r"C:\Users"
+ROOT_PATH = "C:\\"
 
 
 # --------------------------------------------------------------------------- #
